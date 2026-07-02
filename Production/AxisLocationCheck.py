@@ -43,14 +43,11 @@ def get_selected_items(font):
             if not indices:
                 continue
                 
-            # Verifica se a tabela corresponde às Masters
             if row_count == len(font.masters):
-                # Evita duplicar se o mesmo item bater por coincidência de tamanho
                 items = [font.masters[i] for i in indices if i < len(font.masters)]
                 if items and items[0] not in selected_masters:
                     selected_masters = items
             
-            # Verifica se a tabela corresponde às Instâncias
             if row_count == len(font.instances):
                 items = [font.instances[i] for i in indices if i < len(font.instances)]
                 if items and items[0] not in selected_instances:
@@ -59,125 +56,141 @@ def get_selected_items(font):
     return selected_masters, selected_instances
 
 
-class AxisLocationEditor(object):
+class AxisLocationMatrixEditor(object):
 
     def __init__(self):
         self.font = Glyphs.font
         if self.font is None:
-            Glyphs.showNotification("Axis Location Editor", "Nenhuma fonte aberta.")
+            Glyphs.showNotification("Axis Location Matrix", "Nenhuma fonte aberta.")
             return
 
         self.selected_masters, self.selected_instances = get_selected_items(self.font)
         
-        if not self.selected_masters and not self.selected_instances:
+        num_m = len(self.selected_masters)
+        num_i = len(self.selected_instances)
+
+        if num_m == 0 and num_i == 0:
             Glyphs.showNotification(
-                "Axis Location Editor",
+                "Axis Location Matrix",
                 "Nenhum item selecionado. Clique nas linhas em Font Info > Masters ou Exports e rode novamente."
             )
             return
 
         self.axis_names = [axis.name for axis in self.font.axes]
-        self.values = []
-        self.display_items = []
+        self.table_data = []
 
         # Processa Masters selecionadas
         for master in self.selected_masters:
             current = master.customParameters["Axis Location"] or []
             lookup = {entry.get("Axis"): entry.get("Location") for entry in current}
-            self.values.append({axis_name: lookup.get(axis_name, "") for axis_name in self.axis_names})
-            self.display_items.append({"object": master, "type": "Master", "name": master.name})
+            
+            row = {"Tipo": "Master", "Nome": master.name, "_object": master}
+            for axis_name in self.axis_names:
+                val = lookup.get(axis_name, "")
+                row[axis_name] = str(val) if val != "" else ""
+            self.table_data.append(row)
 
         # Processa Instâncias selecionadas
         for inst in self.selected_instances:
             current = inst.customParameters["Axis Location"] or []
             lookup = {entry.get("Axis"): entry.get("Location") for entry in current}
-            self.values.append({axis_name: lookup.get(axis_name, "") for axis_name in self.axis_names})
-            self.display_items.append({"object": inst, "type": "Instância", "name": inst.name})
+            
+            row = {"Tipo": "Instância", "Nome": inst.name, "_object": inst}
+            for axis_name in self.axis_names:
+                val = lookup.get(axis_name, "")
+                row[axis_name] = str(val) if val != "" else ""
+            self.table_data.append(row)
 
-        self.current_axis_index = 0
+        # Cálculo responsivo inicial do tamanho
+        col_tipo_w = 60
+        col_nome_w = 160
+        col_eixo_w = 70
+        
+        init_width = col_tipo_w + col_nome_w + (col_eixo_w * len(self.axis_names)) + 20
+        init_width = max(init_width, 480) 
+        
+        init_height = 15 + (22 * len(self.table_data)) + 95
+        init_height = min(max(init_height, 220), 750)
 
-        total_items = len(self.display_items)
-        height = 140 + 22 * total_items
-        self.w = vanilla.FloatingWindow((440, min(max(height, 240), 580)),
-                                         "Editar Axis Location (%d itens selecionados)" % total_items)
+        # Geração inteligente do título ocultando valores zerados
+        partes_titulo = []
+        if num_m > 0:
+            partes_titulo.append("%d Master(s)" % num_m)
+        if num_i > 0:
+            partes_titulo.append("%d Instância(s)" % num_i)
+        
+        window_title = "Matriz Axis Location (%s selecionada(s))" % " / ".join(partes_titulo)
+        
+        # Criando a janela flutuante com limites mínimos e máximos para habilitar o redimensionamento nativo do macOS
+        self.w = vanilla.FloatingWindow(
+            (init_width, init_height), 
+            window_title,
+            minSize=(480, 220),         # Impede o usuário de esmagar a interface além do limite funcional
+            maxSize=(1800, 1200)        # Limite máximo seguro de expansão da tela
+        )
 
-        y = 10
-        self.w.axisLabel = vanilla.TextBox((10, y + 2, 90, 20), "Eixo Ativo:")
-        self.w.axisPopup = vanilla.PopUpButton((110, y, 180, 20), self.axis_names,
-                                               callback=self.axisChangedCallback)
-
+        # Definição dinâmica das colunas da matriz
         columns = [
-            dict(title="Tipo", key="Tipo", editable=False, width=70),
-            dict(title="Nome do Item", key="Nome", editable=False, width=220),
-            dict(title="Valor", key="Valor", editable=True),
+            dict(title="Tipo", key="Tipo", editable=False, width=col_tipo_w),
+            dict(title="Nome do Item", key="Nome", editable=False, width=col_nome_w),
         ]
-        self.w.list = vanilla.List((10, 40, -10, -80), self.buildRows(),
-                                    columnDescriptions=columns)
+        for axis_name in self.axis_names:
+            columns.append(dict(title=axis_name, key=axis_name, editable=True, width=col_eixo_w))
 
+        # A tabela usa índices negativos (-10, -80) para grudar elasticamente nas bordas direita e inferior da janela
+        self.w.list = vanilla.List((10, 10, -10, -80), self.table_data, columnDescriptions=columns)
+
+        # Controles de aplicação em lote (Bulk Apply) ancorados dinamicamente na parte inferior
         by = -65
-        self.w.bulkValue = vanilla.EditText((10, by, 100, 20), "")
-        self.w.bulkApply = vanilla.Button((120, by, 140, 20), "Aplicar a todos",
-                                           callback=self.bulkApplyCallback)
+        self.w.bulkLabel = vanilla.TextBox((10, by + 2, 50, 20), "Inserir:")
+        self.w.bulkValue = vanilla.EditText((65, by, 50, 20), "")
+        self.w.bulkAxisLabel = vanilla.TextBox((125, by + 2, 50, 20), "no eixo:")
+        self.w.bulkAxisPopup = vanilla.PopUpButton((180, by, 110, 20), self.axis_names)
+        self.w.bulkApply = vanilla.Button((300, by, 110, 20), "Aplicar a todos", callback=self.bulkApplyCallback)
 
-        self.w.saveButton = vanilla.Button((-140, -35, -10, 20), "Salvar", callback=self.saveCallback)
-        self.w.cancelButton = vanilla.Button((-260, -35, -150, 20), "Cancelar", callback=self.cancelCallback)
+        # Botões de Ação ancorados à direita e abaixo usando coordenadas relativas negativas
+        self.w.saveButton = vanilla.Button((-135, -35, -10, 20), "Salvar", callback=self.saveCallback)
+        self.w.cancelButton = vanilla.Button((-255, -35, -145, 20), "Cancelar", callback=self.cancelCallback)
 
         self.w.open()
-
-    def buildRows(self):
-        axis_name = self.axis_names[self.current_axis_index]
-        rows = []
-        for item, vals in zip(self.display_items, self.values):
-            rows.append({
-                "Tipo": item["type"],
-                "Nome": item["name"],
-                "Valor": str(vals[axis_name]) if vals[axis_name] != "" else ""
-            })
-        return rows
-
-    def storeCurrentColumn(self):
-        """Salva temporariamente na memória as edições feitas na tabela."""
-        axis_name = self.axis_names[self.current_axis_index]
-        data = self.w.list.get()
-        for vals, row in zip(self.values, data):
-            vals[axis_name] = row.get("Valor", "")
-
-    def axisChangedCallback(self, sender):
-        self.storeCurrentColumn()
-        self.current_axis_index = sender.get()
-        self.w.list.set(self.buildRows())
 
     def bulkApplyCallback(self, sender):
         value = self.w.bulkValue.get()
         if value == "":
             return
         
-        axis_name = self.axis_names[self.current_axis_index]
-        for vals in self.values:
-            vals[axis_name] = value
+        axis_index = self.w.bulkAxisPopup.get()
+        axis_name = self.axis_names[axis_index]
+        
+        current_data = self.w.list.get()
+        for row in current_data:
+            row[axis_name] = value
             
-        self.w.list.set(self.buildRows())
+        self.w.list.set(current_data)
 
     def saveCallback(self, sender):
-        self.storeCurrentColumn()
+        final_data = self.w.list.get()
         
         self.font.disableUpdateInterface()
         atualizados = 0
         try:
-            for item, vals in zip(self.display_items, self.values):
-                obj = item["object"]
+            for row in final_data:
+                obj = row.get("_object")
+                if not obj:
+                    continue
+                
                 current = obj.customParameters["Axis Location"] or []
                 lookup = {entry.get("Axis"): entry for entry in current}
 
                 novo = []
                 for axis_name in self.axis_names:
-                    raw_value = vals.get(axis_name, "")
+                    raw_value = row.get(axis_name, "")
                     try:
                         valor = float(raw_value)
                         if valor.is_integer():
                             valor = int(valor)
                     except (TypeError, ValueError):
-                        # Mantém o valor original se o campo for inválido ou vazio
+                        # Mantém o valor original se o campo estiver vazio ou inválido
                         valor = lookup.get(axis_name, {}).get("Location", 0)
                     
                     novo.append({"Axis": axis_name, "Location": valor})
@@ -185,16 +198,16 @@ class AxisLocationEditor(object):
                 obj.customParameters["Axis Location"] = novo
                 atualizados += 1
         except Exception as e:
-            print("Erro ao aplicar Axis Location: %s" % str(e))
+            print("Erro ao salvar a matriz de Axis Location: %s" % str(e))
         finally:
             self.font.enableUpdateInterface()
 
-        Glyphs.showNotification("Axis Location Editor",
-                                 "%d item(ns) atualizado(s) com sucesso." % atualizados)
+        Glyphs.showNotification("Axis Location Matrix", 
+                                 "%d item(ns) gravado(s) com sucesso." % atualizados)
         self.w.close()
 
     def cancelCallback(self, sender):
         self.w.close()
 
 
-AxisLocationEditor()
+AxisLocationMatrixEditor()
