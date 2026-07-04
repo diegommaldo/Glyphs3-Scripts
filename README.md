@@ -25,4 +25,7 @@
 - Stylistic Set Generator
 ## Production
 - Axis Location Checker
+<p>
+<img width="526" height="395" alt="Screenshot 2026-07-04 at 17 56 16" src="https://github.com/user-attachments/assets/3caf926e-3a71-413b-be24-4887b9a5af02" />
+</p>
 - Remove Layer Color
