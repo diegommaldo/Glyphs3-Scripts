@@ -1,6 +1,12 @@
 # MenuTitle: Gerador de Glifos Acentuados
 # encoding: utf-8
 
+__doc__ = """
+Gera glifos acentuados
+a partir de pré-definições
+determinadas.
+"""
+
 import vanilla
 import GlyphsApp
 
