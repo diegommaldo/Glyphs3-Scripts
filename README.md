@@ -28,4 +28,11 @@
 <p>
 <img width="526" height="395" alt="Screenshot 2026-07-04 at 17 56 16" src="https://github.com/user-attachments/assets/3caf926e-3a71-413b-be24-4887b9a5af02" />
 </p>
+<p>
+• Gerador de Acentuados
+</p>
+<p>
+  <img width="416" height="705" alt="Screenshot 2026-07-06 at 20 44 02" src="https://github.com/user-attachments/assets/1aedee84-395e-49be-88d2-2ef812bc66d4" />
+
+</p>
 • Remove Layer Color
