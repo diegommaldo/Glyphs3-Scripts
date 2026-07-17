@@ -29,6 +29,11 @@
 <img width="526" height="395" alt="Screenshot 2026-07-04 at 17 56 16" src="https://github.com/user-attachments/assets/3caf926e-3a71-413b-be24-4887b9a5af02" />
 </p>
 <p>
+• Configurador Panose
+<p>
+<img width="466" height="685" alt="Screenshot 2026-07-17 at 16 12 39" src="https://github.com/user-attachments/assets/16da50a7-66c0-48a9-9620-9fc932865ab8" />
+</p>
+<p>
 • Editar Rename Glyphs
 <p>
 <img width="546" height="665" alt="Screenshot 2026-07-15 at 17 35 46" src="https://github.com/user-attachments/assets/7e8e72c2-c9fb-4fee-a672-ec62139f32c6" />
