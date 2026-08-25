@@ -7,6 +7,10 @@
 <p>
 <img width="426" height="625" alt="Screenshot 2026-08-25 at 10 41 17" src="https://github.com/user-attachments/assets/6c4a67cd-823b-4a82-9129-206c56cbe03d" />
 </p>
+- Checar desvio de Âncoras
+<p>
+<img width="366" height="285" alt="Screenshot 2026-08-25 at 10 46 09" src="https://github.com/user-attachments/assets/e0ce3e42-b210-4592-89a0-da850fcc34da" />
+</p>
 
 ## Color Fonts
 - Export SBIX Color Fonts
