@@ -4,8 +4,9 @@
 
 ## Âncoras
 - Alinhar Âncoras
-  <img width="426" height="625" alt="Screenshot 2026-08-25 at 10 41 17" src="https://github.com/user-attachments/assets/6c4a67cd-823b-4a82-9129-206c56cbe03d" />
-
+<p>
+<img width="426" height="625" alt="Screenshot 2026-08-25 at 10 41 17" src="https://github.com/user-attachments/assets/6c4a67cd-823b-4a82-9129-206c56cbe03d" />
+</p>
 
 ## Color Fonts
 - Export SBIX Color Fonts
